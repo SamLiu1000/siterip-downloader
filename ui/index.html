@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<title>Siterip Downloader</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- ═══ 侧栏：站点列表 + 全局状态 + 固定入口 ═══ -->
+<aside id="sidebar">
+  <div class="logo">Siterip<span>Downloader</span></div>
+
+  <label class="site-select-wrap">站点
+    <!-- 站点下拉框：列表来自后端站点注册表（list_sites） -->
+    <select id="site-select"></select>
+  </label>
+
+  <div class="side-sec-title">📁 工作项目 <span class="hint">点击恢复 · 悬停可改/删</span>
+    <button id="btn-save-session" class="btn mini" title="把当前列表手动存为一个工作项目">💾 存当前</button>
+  </div>
+  <nav id="session-list" class="site-list sess-list"><!-- JS 填充 --></nav>
+
+  <button id="btn-login" class="nav-btn">🔑 登录 / 刷新 Cookie</button>
+  <button id="btn-open-dir" class="nav-btn">📂 打开下载目录</button>
+
+  <div class="side-foot">
+    <div class="badges">
+      <span id="login-badge" class="badge off">未登录</span>
+      <span id="ytdlp-badge" class="badge off">yt-dlp: 检测中…</span>
+    </div>
+    <button id="btn-settings" class="nav-btn ghost">⚙ 设置</button>
+  </div>
+</aside>
+
+<!-- ═══ 主列：顶栏 + 工具行 + 网格 + 任务坞 ═══ -->
+<div id="main-col">
+
+  <header class="topbar">
+    <input id="cfg-fav-url" class="url-input" spellcheck="false"
+           placeholder="粘贴收藏页地址，如 https://www.xvideos.com/favorite/…" />
+    <button id="btn-fetch" class="btn primary">📥 拉取列表</button>
+  </header>
+
+  <div id="sel-toolbar" class="sel-toolbar">
+    <label class="sel-all-wrap"><input type="checkbox" id="sel-all" /> 全选</label>
+    <button id="btn-invert" class="btn mini">反选</button>
+    <button id="btn-clear-sel" class="btn mini">清除</button>
+    <span id="sel-count" class="sel-count"></span>
+    <span class="spacer"></span>
+    <button id="btn-show-done" class="btn mini toggle">👁 未下载</button>
+    <button id="btn-download-new" class="btn primary">⬇ 下载选中的 (0)</button>
+    <button id="btn-retry-failed" class="btn retry hidden">↻ 重试失败项</button>
+  </div>
+
+  <main id="grid" class="grid">
+    <div class="placeholder">
+      <div class="ph-icon">⬇</div>
+      <div class="ph-title">开始抓取</div>
+      <div class="ph-steps">① 登录站点 &nbsp;→&nbsp; ② 粘贴收藏页地址 &nbsp;→&nbsp; ③ 拉取列表并勾选下载</div>
+    </div>
+  </main>
+
+  <footer id="dock">
+    <div class="dock-row">
+      <span id="stats" class="stats">就绪</span>
+      <span class="spacer"></span>
+      <span id="job-summary" class="hint"></span>
+      <button id="btn-tc-open" class="btn mini hidden">📋 任务中心</button>
+      <button id="btn-cancel" class="btn danger hidden">✖ 取消队列</button>
+    </div>
+  </footer>
+</div>
+
+<!-- ═══ 任务中心：右侧滑出面板 ═══ -->
+<div id="task-center" class="drawer hidden">
+  <div class="drawer-box">
+    <div class="drawer-head">
+      <h2>任务中心</h2>
+      <button id="btn-close-tc" class="btn mini ghost">✕ 关闭</button>
+    </div>
+    <div id="tc-summary" class="hint"></div>
+    <div class="tc-bar">
+      <label class="sel-all-wrap"><input type="checkbox" id="tc-sel-all" /> 全选</label>
+      <button id="btn-tc-retry" class="btn mini">↻ 重试选中</button>
+      <button id="btn-tc-remove" class="btn mini danger">✖ 移除选中</button>
+      <span class="spacer"></span>
+      <button id="btn-clear-done" class="btn mini">清除已完成/已取消</button>
+    </div>
+    <div id="tc-jobs" class="jobs"></div>
+  </div>
+</div>
+
+<!-- ═══ 设置：右侧滑出面板 ═══ -->
+<div id="settings" class="drawer hidden">
+  <div class="drawer-box">
+    <div class="drawer-head">
+      <h2>设置</h2>
+      <button id="btn-close-settings" class="btn mini ghost">✕ 关闭</button>
+    </div>
+
+    <label>代理地址（留空直连）
+      <input id="cfg-proxy" placeholder="http://127.0.0.1:10809" />
+    </label>
+
+    <label>下载目录
+      <div class="row" style="gap:6px">
+        <input id="cfg-dir" style="flex:1" />
+        <button id="btn-dir-pick" type="button">浏览…</button>
+      </div>
+    </label>
+
+    <label>画质偏好
+      <select id="cfg-quality">
+        <option value="high" selected>最高（站点提供的最好画质）</option>
+        <option value="standard">标准（最高 1080p）</option>
+        <option value="low">低档（最高 720p，省空间）</option>
+      </select>
+      <span class="hint">上限而非固定值：每个视频的实际分辨率由站点提供决定，会自动选不超过上限的最优档</span>
+    </label>
+
+    <label>同时下载
+      <select id="cfg-concurrency">
+        <option>1</option><option selected>2</option><option>3</option><option>4</option>
+      </select>
+    </label>
+
+    <label>下载完成后
+      <select id="cfg-after-done">
+        <option value="none" selected>无动作</option>
+        <option value="shutdown">关机（60 秒后，可取消）</option>
+        <option value="sleep">休眠</option>
+      </select>
+      <span class="hint">挂机下载场景：队列全部结束后执行。关机有 60 秒缓冲，命令行 shutdown /a 可取消</span>
+    </label>
+
+    <div class="row right" style="margin-top:auto">
+      <button id="btn-save-settings" class="btn primary">保存</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

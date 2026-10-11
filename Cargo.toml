@@ -1,0 +1,31 @@
+[package]
+name = "siterip-downloader"
+version = "0.1.0"
+edition = "2021"
+description = "Batch downloader for xvideos favorites with per-site proxy support"
+
+[dependencies]
+tauri = { version = "2", features = ["unstable"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.8"
+rusqlite = { version = "0.32", features = ["bundled"] }
+regex = "1"
+rand = "0.8"
+anyhow = "1"
+dirs = "5"
+async-trait = "0.1"
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "gzip"] }
+tokio = { version = "1", features = ["full"] }
+opener = "0.6"
+rfd = "0.15"
+cookie = "0.18"
+time = { version = "0.3", features = ["local-offset"] }
+tauri-plugin-single-instance = "2"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[profile.release]
+opt-level = 2
+lto = true

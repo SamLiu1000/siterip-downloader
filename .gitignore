@@ -1,0 +1,19 @@
+# Rust / Tauri build artifacts (contains local runtime data: config, cookies, db)
+/target/
+
+# Local runtime data (never commit: cookies, sessions, download db)
+/data/
+*.log
+
+# Frontend deps
+node_modules/
+
+# Reference copy of AAndyProgram/SCrawler (third-party project, not part of the build)
+/SCrawler/
+
+# ZCode session files
+.zcode/
+
+# OS junk
+Thumbs.db
+desktop.ini

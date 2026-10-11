@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<style>
+  * { margin: 0; box-sizing: border-box; }
+  body {
+    background: #1d1f26; color: #e8e9ee; font-family: "Segoe UI", sans-serif;
+    display: flex; align-items: center; gap: 6px; padding: 6px 8px;
+    height: 100vh; overflow: hidden; user-select: none;
+  }
+  button {
+    background: #262933; color: #e8e9ee; border: 1px solid #32363f;
+    width: 34px; height: 32px; border-radius: 6px; cursor: pointer; font-size: 15px;
+  }
+  button:hover { border-color: #7c5cff; }
+  input {
+    flex: 1; height: 32px; background: #14151a; color: #e8e9ee;
+    border: 1px solid #32363f; border-radius: 6px; padding: 0 10px; font-size: 13px;
+  }
+  input:focus { outline: none; border-color: #7c5cff; }
+</style>
+</head>
+<body>
+  <button id="b-back" title="后退">◀</button>
+  <button id="b-fwd" title="前进">▶</button>
+  <button id="b-reload" title="刷新">⟳</button>
+  <button id="b-home" title="回首页">⌂</button>
+  <input id="url" spellcheck="false" placeholder="输入网址或搜索词" />
+  <script>
+    const { invoke } = window.__TAURI__.core;
+    // webview label 形如 "xvideos-login-3-bar"：剥掉 "-bar" 后取第一段就是站点 id
+    let site = null;
+    try {
+      site = window.__TAURI__.webview.getCurrentWebview().label.replace(/-bar$/, '').split('-')[0];
+    } catch {}
+    site = site || new URLSearchParams(location.search).get('site') || 'xvideos';
+    const input = document.getElementById('url');
+    let editing = false;
+    input.addEventListener('focus', () => editing = true);
+    input.addEventListener('blur', () => editing = false);
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        editing = false;
+        input.blur();
+        invoke('nav_cmd', { site, action: 'goto', url: input.value }).catch(() => {});
+      }
+    });
+    const go = a => () => invoke('nav_cmd', { site, action: a }).catch(() => {});
+    document.getElementById('b-back').onclick = go('back');
+    document.getElementById('b-fwd').onclick = go('forward');
+    document.getElementById('b-reload').onclick = go('reload');
+    document.getElementById('b-home').onclick = go('home');
+    setInterval(async () => {
+      if (editing) return;
+      try {
+        const u = await invoke('nav_url', { site });
+        if (u) input.value = u;
+      } catch { /* 窗口关闭中 */ }
+    }, 700);
+  </script>
+</body>
+</html>
